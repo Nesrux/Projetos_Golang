@@ -1,23 +1,51 @@
 package main
 
 import (
-	"testing"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 )
 
-func Test_obterJogador(t *testing.T){
-	t.Run("retorna resuldado de maria", func(t *testing.T) {
-		req, _ := http.NewRequest(http.MethodGet, "/jogadores/maria", nil)
-		resp := httptest.NewRecorder()
+type EsbocoArmazenamentoJogador struct {
+	pontuacoes map[string]int
+}
 
-		Servidor(resp, req)
+func (e *EsbocoArmazenamentoJogador) ObterPontuacaoJogador(nome string) int {
+	//	pontuacao :=
+	return e.pontuacoes[nome]
+}
 
-		recebido := resp.Body.String()
-		esperado := "20"
+func TestObterJogadores(t *testing.T) {
+	servidor := &ServidorJogador{}
 
-		if recebido != esperado{
-			t.Errorf("recebido %s, esperado %s", recebido, esperado)
-		}
+	t.Run("retornar resultado de Maria", func(t *testing.T) {
+		requisicao := novaRequisicaoObterPontuacao("Maria")
+		resposta := httptest.NewRecorder()
+
+		servidor.ServeHTTP(resposta, requisicao)
+
+		verificarCorpoRequisicao(t, resposta.Body.String(), "20")
 	})
+
+	t.Run("returns Pedro's score", func(t *testing.T) {
+		requisicao := novaRequisicaoObterPontuacao("Pedro")
+		resposta := httptest.NewRecorder()
+
+		servidor.ServeHTTP(resposta, requisicao)
+
+		verificarCorpoRequisicao(t, resposta.Body.String(), "10")
+	})
+}
+
+func novaRequisicaoObterPontuacao(nome string) *http.Request {
+	requisicao, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/jogadores/%s", nome), nil)
+	return requisicao
+}
+
+func verificarCorpoRequisicao(t *testing.T, recebido, esperado string) {
+	t.Helper()
+	if recebido != esperado {
+		t.Errorf("corpo da requisição é inválido, obtive '%s' esperava '%s'", recebido, esperado)
+	}
 }
